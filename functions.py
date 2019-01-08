@@ -1,38 +1,30 @@
-import Pkg
-Pkg.add("SpecialFunctions")
-using SpecialFunctions # for gamma() function
-using LinearAlgebra # for eigvals()
 
 
-function coef(N, V)
+def coef(N, V):
     """
     N: total number of particles
     V: volume of the system
     Perhaps you should change factorial(N-1) if not for a FCC. Read AppendixA
     """
+    import math
     m = N - 1
-    return factorial(m) / ( V ^ m )
-end
+    return math.factorial(m) / ( V ** m )
+#
 
-# function belongs(x, xmin, xmax)
-#     return (xmin <= x) & (x <= xmax)
-# end
+def belongs(x, xmin, xmax):
+    return (xmin <= x) and (x <= xmax)
+#
 
-belongs(x, xmin, xmax) = (xmin < x) && (x < xmax) ? true : false
+def productSqE(ε):
+    import math
+    from functools import reduce
+    # http://book.pythontips.com/en/latest/map_filter.html
+    product = reduce( (lambda x, y: x * y), ε )
+    return 1 / math.sqrt( product )
+#
 
-function productSqE(ε)
-    δ = 1.0E-5
-    p = 1.0
-    for k in 1:1:length(ε)
-        @assert ε[k] >= 0.0 # harmonic oscillator has non-negative eigenvalues!
-        if !belongs(ε[k], 0.0, δ)  # ε[k] != 0.0
-            p = p / sqrt( ε[k] )  # ( ε[k] ^ ( -0.5 ) )
-        end
-    end
-    return p
-end
 
-function getForceMatrix()
+def getForceMatrix():
     """
     This function get the Hessian
     """
@@ -52,42 +44,43 @@ function getForceMatrix()
     #       1.0 0.0 ]
 
     #
-    F = [ f11 f12 f13;
-          f21 f22 f23;
-          f31 f32 f33   ]
+    F = [ [f11, f12, f13],
+          [f21, f22, f23],
+          [f31, f32, f33]   ]
     return F
-
-end
+#
 
 # function findEigen()
 #     ε = eigvals( getForceMatrix() )
 #     return ε
 # end
 
-function getRidZeros(ε)
-    δ = 1.0E-5
 
-    #.................................
-    # still working here to reduce code...
-    # # harmonic oscillator has non-negative eigenvalues!
-    # # ε[k] > 0.0 (we will avoid zeros)
-    # bools = map(x -> belongs(x, 0, δ), ε) # ε[k] != 0.0
-    # v  = [ε[i] for i in ]???
-    #.................................
-
-    v = zeros(0) # This helps to initialize with type float, but length ZERO!
+def getRidZeros(ε):
     # harmonic oscillator has non-negative eigenvalues!
-    for k in 1:1:length(ε)
-        @assert ε[k] >= 0.0 # harmonic oscillator has non-negative eigenvalues!
-        if !belongs(ε[k], 0.0, δ)  # ε[k] != 0.0
-            push!(v, ε[k])
-        end
-    end
-    return v
-end
+    # ε[k] != 0.0
+    positives = []
+    [positives.append(ε[k]) if ε[k] > 0 else None for k in range(len(ε)) ]
+    return positives
+#
+
+
+def findEigenValues(M): # M is matrix array [ [], [], [], ...]
+    import numpy as np
+    from scipy import linalg as LA
+
+    # convert array [1,2,3,] into numpy array: array([1,2,3,...])
+    matrix = np.asarray(M)
+
+    # For a complex Hermitian or real symmetric matrix: eigvalsh
+    eigenValues = LA.eigvalsh(matrix)
+
+    return eigenValues
+#
+
 
 # function to calculate the harmonic DOS
-function harmonicDOS(V, dE)
+def harmonicDOS(V, dE):
     """
     Calculate the harmonic DOS
     Here one particle is taken as center of reference, and the other particles
@@ -113,18 +106,20 @@ function harmonicDOS(V, dE)
     which can represent the interaction of two particles joined by a string.
 
     """
-    ε = eigvals( getForceMatrix() )
+    import math
+
+    ε = findEigenValues( getForceMatrix()  )
     ε = getRidZeros(ε) # paper: "zeros do not contribute to DOS"
-    D = length(ε) # D = 3N-3, but here it's not necessary to substract -3 since
+    D = len(ε) # D = 3N-3, but here it's not necessary to substract -3 since
                   # we already got rid of zeros.
     Dm = D / 2.0
     N  = (D + 3) / 3.0 # comes from solving D = 3N-3
+    π = math.pi
 
     c  = coef(N, V)
-    m1 = productSqE(ε)
-    m2 = ( 2 * dE ) ^ ( Dm  - 1 )
-    m3 = 2 * ( π ^ Dm ) / gamma(Dm)
+    m1 = productSqE(ε) # not zeros!
+    m2 = ( 2 * dE ) ** ( Dm  - 1 )
+    m3 = 2 * ( π ** Dm ) / math.gamma(Dm)
 
     return c * m1 * m2 * m3
-
-end
+#

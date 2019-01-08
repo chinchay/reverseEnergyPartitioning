@@ -1,15 +1,20 @@
 include("functions.jl")
-
-x = harmonicDOS(1, 1) #harmonicDOS(N, V, dE, D)
-
-
-x = eigvals( getForceMatrix() )
-
-x = getRidZeros(x)
-println(x)
+println(harmonicDOS(1, 1))
 
 
-m2 = ( 2 * 1 ) ^ ( 1.5  - 1 )
-m3 = 2 * ( π ^ 1.5 ) / gamma(1.5)
+include("potential.jl")
 
-print(m2*m3)
+atoms()
+
+atom1 = Atom("Co", 0.0, 0.0)
+
+sentence = "This is a string"
+sArray = split(sentence)
+longest = reduce( (x,y) -> length(x) > length(y) ? x : y, sArray )
+print(longest)
+
+v = [1000,1,2,3,-1,4,100,99,-99,101]
+m = reduce( (x,y) -> x > y ? x : y, v )
+
+
+reduce(push, 1, [2; 3; 4])
