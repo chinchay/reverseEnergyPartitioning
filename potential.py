@@ -42,26 +42,32 @@ class Atom:
 
 
 
-def getAtoms():
+def getAtomsAtEquilibriumPositions():
     import numpy as np
     import vectormath as vmath
     from vectormath import Vector3 as Vector3
-
-    A = Atom("Co", Vector3(0.0, 1.0, 0.0) )
-    B = Atom("Co", Vector3(1.0, 0.0, 0.0) )
-    C = Atom("Co", Vector3(0.0, 1.0, 3.0) )
-    lAtoms = [A,B,C]
+    # BCC:
+    A1 = Atom("Co", Vector3(1.0, 0.0, 0.0) )
+    A2 = Atom("Co", Vector3(0.0, 1.0, 0.0) )
+    A3 = Atom("Co", Vector3(0.0, 0.0, 1.0) )
+    A4 = Atom("Co", Vector3(0.0, 0.0, 0.0) )
+    A5 = Atom("Co", Vector3(1.0, 1.0, 0.0) )
+    A6 = Atom("Co", Vector3(1.0, 0.0, 1.0) )
+    A7 = Atom("Co", Vector3(0.0, 1.0, 1.0) )
+    A8 = Atom("Co", Vector3(1.0, 1.0, 1.0) )
+    #lAtoms = [A1,A2,A3,A4,A5,A6,A7,A8]
+    lAtoms = [A1,A2,A3]
     return lAtoms
 #
 
 
-def getPotential(lAtoms):
+def getTotalPotentialEnergy(lAtoms, V): # V is a function name `VLJ` for example
     n = len(lAtoms)
     pot = 0.0
     for i in range(n):
         for j in range(n):
             if (j > i): # avoid repeated interactions, and self-interaction
-                pot += VLJ( lAtoms[i], lAtoms[j] )
+                pot += V( lAtoms[i], lAtoms[j] )
     #
     return pot
 #

@@ -28,26 +28,11 @@ def getForceMatrix():
     """
     This function get the Hessian
     """
-    f11 = 1.0
-    f12 = 0.0
-    f13 = 0.0
+    import numpy as np
+    nAtoms = 2
+    F = np.diag(np.ones(3 * nAtoms), 0) # each atom as x,y,z degree of freedom
 
-    f21 = 0.0
-    f22 = 1.0
-    f23 = 0.0
-
-    f31 = 0.0
-    f32 = 0.0
-    f33 = 1.0
-
-    # F = [ 0.0 1.0;
-    #       1.0 0.0 ]
-
-    #
-    F = [ [f11, f12, f13],
-          [f21, f22, f23],
-          [f31, f32, f33]   ]
-    return F
+    return F #returns a numpy array
 #
 
 # function findEigen()
@@ -65,18 +50,17 @@ def getRidZeros(ε):
 #
 
 
-def findEigenValues(M): # M is matrix array [ [], [], [], ...]
-    import numpy as np
-    from scipy import linalg as LA
-
-    # convert array [1,2,3,] into numpy array: array([1,2,3,...])
-    matrix = np.asarray(M)
-
-    # For a complex Hermitian or real symmetric matrix: eigvalsh
-    eigenValues = LA.eigvalsh(matrix)
-
-    return eigenValues
+# def findEigenValues(M): # M is numpy matrix array [ [], [], [], ...]
+#     # to convert array to numpy array, use np.asarray( [array] )
+#     # M is already a numpy array.
+#     import numpy as np
+#     from scipy import linalg as LA
 #
+#     # For a complex Hermitian or real symmetric matrix: eigvalsh
+#     eigenValues = LA.eigvalsh(M)
+#
+#     return eigenValues
+# #
 
 
 # function to calculate the harmonic DOS
@@ -107,9 +91,15 @@ def harmonicDOS(V, dE):
 
     """
     import math
+    from scipy import linalg as LA
 
-    ε = findEigenValues( getForceMatrix()  )
+    # For a complex Hermitian or real symmetric matrix: eigvalsh
+    # getForceMatrix() returns a numpy array... OK
+    ε = LA.eigvalsh( getForceMatrix() ) # ε is a numpy array
+
     ε = getRidZeros(ε) # paper: "zeros do not contribute to DOS"
+    # ε is now an array, not a numpy array!
+
     D = len(ε) # D = 3N-3, but here it's not necessary to substract -3 since
                   # we already got rid of zeros.
     Dm = D / 2.0
