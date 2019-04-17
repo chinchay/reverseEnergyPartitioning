@@ -18,3 +18,22 @@ m = reduce( (x,y) -> x > y ? x : y, v )
 
 
 reduce(push, 1, [2; 3; 4])
+
+Ω
+α
+
+
+struct Individual{T}
+  chromosome::Vector{T}
+
+  #Inner constructor
+  Individual{T}(ngenes::UInt) where T<:Number =  new{T}(Vector{T}(ngenes))
+end
+
+
+struct BinaryIndividual <: Individual
+
+  #Inner constructor
+  BinaryIndividual(ngenes::UInt) = new{Bool}(ngenes)
+
+end
