@@ -17,43 +17,60 @@ import numpy as np
 from scipy.integrate import simps # Integrating using Samples
 
 import mcFunctions as mc
+import harmonic as ha
 
 # Get names and equilibrium positions of atoms:
 # you will need to find first the equilibrium positions when having `V`
 # For the project, MTP or DFT?? will give the equilibrium positions.
-lAtomsEquilibrium, a1, a2, a3 = potential.getAtomsAtEquilibriumPositions()
+# lAtomsEquilibrium, a1, a2, a3 = potential.getAtomsAtEquilibriumPositions()
+
+Xeq, a1, a2, a3, Emin, forceMatrix = ha.getConfigEquilibrium()
+
+# lAtomsEquilibrium, a1, a2, a3, Emin = ha.getAtomsAtEquilibriumPositions()
+
 
 # Atoms as harmonic oscillators with potential V.
 # Potential energy is calculated at their equilibrium positions:
-#Emin = potential.getTotalPotentialEnergy(lAtomsEquilibrium, V)
-Emin = potential.get3DPotNearFirstNeighb(lAtomsEquilibrium, V, a1, a2, a3)
-# from potential import VLJ2 as V2
-# Emin = potential.getTotalPotentialEnergy([lAtomsEquilibrium[i].position for i in range(len(lAtomsEquilibrium))], V2)
+    #Emin = potential.getTotalPotentialEnergy(lAtomsEquilibrium, V)
+# Emin = potential.get3DPotNearFirstNeighb(lAtomsEquilibrium, V, a1, a2, a3)
+    # from potential import VLJ2 as V2
+    # Emin = potential.getTotalPotentialEnergy([lAtomsEquilibrium[i].position for i in range(len(lAtomsEquilibrium))], V2)
 
 Emin
+len(Xeq)
 
 #deltaE = 0.1 #0.1 described respect to Emin: deltaE = Energy - Emin
-deltaE = abs( 0.1 * Emin / len(lAtomsEquilibrium))
+deltaE = 1 # == f*d
+# deltaE = abs( 2.5 * Emin / len(lAtomsEquilibrium))
 deltaE
 E1 = Emin + deltaE
 
-nPart  = 50 # number of partitions
-Vol = float(len(lAtomsEquilibrium)) ** (1/3)   #1.0
-Vol
+
+nPart  = 1000 #50 # number of partitions
+# Vol = float(len(lAtomsEquilibrium)) ** (1/3)   #1.0
+# Vol
 
 # Getting sample: (# xMin = Emin, xMax = deltaE)
 x = np.array( [ (i * deltaE / nPart) for i in range(nPart + 1) ] )
-y = functions.harmonicDOS(Vol, x) # x departs from Emin -> interpreted as dE
+# x
+
+# ha.harmonicDOS(-8)
+
+# y = functions.harmonicDOS(Vol, x) # x departs from Emin -> interpreted as dE
+y = ha.harmonicDOS(x, forceMatrix) # x departs from Emin -> interpreted as dE
+# y
+
 
 # integrate using Simpson method:
 I1 = simps(y, x)
+I1
 
 # determine E2:
-maxN = 250 # maximum number of iterations to find I2 such that
+maxN = 500 #250 # maximum number of iterations to find I2 such that
 I2 = 0
 i = 0
 x = np.array( [deltaE] )
-
+x
 #
 while ( (I2 <= I1) and (i < maxN) ):
     i += 1
@@ -62,9 +79,11 @@ while ( (I2 <= I1) and (i < maxN) ):
     # `i` is free to increase indef
     deltaE2 = deltaE + ( i * deltaE / nPart)
     x = np.append(x, deltaE2 )
+    x
 
     # x departs from Emin -> interpreted as dE
-    y = functions.harmonicDOS(Vol, x)
+    # y = functions.harmonicDOS(Vol, x)
+    y = ha.harmonicDOS(x, forceMatrix)
 
     # integrate using Simpson method:
     I2 = simps(y, x)
@@ -73,27 +92,40 @@ while ( (I2 <= I1) and (i < maxN) ):
 #
 
 deltaE2 = deltaE + ( (i - 1) * deltaE / nPart)
-E2 = Emin + deltaE2
+deltaE2 - deltaE
 
+
+E2 = Emin + deltaE2
+deltaE2
 # print(I1, I2, Emin, E1, E2)
 
 
 # Plot
 from matplotlib import pyplot as plt
 intervalos = 50
-x = np.array( [ (i * deltaE / intervalos) for i in range(6 * intervalos) ] )
-y = functions.harmonicDOS(Vol, x) # x departs from Emin -> interpreted as dE
-y1 = functions.harmonicDOS(Vol, deltaE)
-y2 = functions.harmonicDOS(Vol, deltaE2)
+x = np.array( [ (i * deltaE / intervalos) for i in range(intervalos +3) ] )
+# y = functions.harmonicDOS(Vol, x) # x departs from Emin -> interpreted as dE
+# y1 = functions.harmonicDOS(Vol, deltaE)
+# y2 = functions.harmonicDOS(Vol, deltaE2)
+y  = ha.harmonicDOS(x, forceMatrix) # x departs from Emin -> interpreted as dE
+y1 = ha.harmonicDOS(deltaE, forceMatrix)
+y2 = ha.harmonicDOS(deltaE2, forceMatrix)
+
 
 x = x + Emin
 plt.plot(x, y, '-',   [Emin, E1, E2], [0,y1,y2], 'o')
 
 
 ##=====
+# import math
+# x2 = np.array( [ x[i] for i in range( 200, len(x) )] )
+# y2 = np.array( [ math.log(y[i]) for i in range( 200, len(y) )] )
+# len(x2)
+# len(y2)
+# plt.plot(x2, y2, '-',)
 import math
-x2 = np.array( [ x[i] for i in range( 200, len(x) )] )
-y2 = np.array( [ math.log(y[i]) for i in range( 200, len(y) )] )
+x2 = np.array( [ x[i] for i in range( 20, len(x) )] )
+y2 = np.array( [ math.log(y[i]) for i in range( 20, len(y) )] )
 len(x2)
 len(y2)
 plt.plot(x2, y2, '-',)
@@ -134,35 +166,45 @@ m = 3  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 # E_m values:
 E = [Emin, E1, E2] # = [E0, E1, E2]
-E
 
-E1 - Emin
-E2 - E1
+E
+[E1-Emin, E2-E1, mc.getEm(1, E[3 - 1], E[3 - 2]) -E2]
+[E1-Emin, E2-E1, E2+(E2-E1)/(E1-Emin) -E2]
 
 ################################################################################
 continuar = True
-iMax   = 100 #15 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-nSteps =  20000 #1000 #5000 # 500 #50#  = nBarridos * nAtomsInConfig
+iMax   = 30 #10 #100 #15 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+nSteps =  5000 #20000 #1000 #5000 # 500 #50#  = nBarridos * nAtomsInConfig
 alphaMin = 0.01#0.5 # the same as the paper. "At this point, the newly guessed Em is
                # deleted and then a set of random (all moves are accepted) MC
                # moves are performed... more info about how to do the last part.
 
 # select a starting configuration:
 #e, X = Emin, lAtomsEquilibrium
-e, X = Emin, [lAtomsEquilibrium[i].position for i in range(len(lAtomsEquilibrium))]
-
-# Main Reverse Energy Partitioning loop:
-L = 0.01  #0.01 #0.2 #0.5 # 0.1#  ~amplitud of random walk
-i = 0
+# e, X = Emin, [lAtomsEquilibrium[i].position for i in range(len(lAtomsEquilibrium))]
 
 import copy
+e = Emin
+X = copy.deepcopy(Xeq)
+
+# Main Reverse Energy Partitioning loop:
+L = 0.1 #0.1 #0.01  #0.01 #0.2 #0.5 # 0.1#  ~amplitud of random walk
+i = 0
+
+
 
 
 while ( continuar and (i < iMax) ): # iMax allows to force stopping.
     i += 1
 
-    # Guess the energy boundary Em
+    # # Guess the energy boundary Em
+    # if i == 1:
+    #     Em = E2 + (E2-E1)/(E1-Emin)
+    # else:
+    #     Em = mc.getEm(lAlpha[m - 1], E[m - 1], E[m - 2])
+
     Em = mc.getEm(lAlpha[m - 1], E[m - 1], E[m - 2])
+    Em
     E.append(Em)
 
     # X = get
@@ -172,7 +214,7 @@ while ( continuar and (i < iMax) ): # iMax allows to force stopping.
     Xcopy = copy.deepcopy(X)
     lCfgs, alpha, log_idos, log_sum_idos, L =\
                         mc.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
-                                      nSteps, e, Xcopy, log_idos, log_sum_idos, L, a1, a2, a3)
+                                      nSteps, e, Xcopy, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix)
 
     lAlpha.append(alpha) # alpha = α_m
 
@@ -198,7 +240,7 @@ while ( continuar and (i < iMax) ): # iMax allows to force stopping.
         # do a set of random MC moves and collect ehist above and below E[m-1]:
         lCfgs, alpha, log_idos, log_sum_idos, L =\
                     mc.randomMCmoves(Emin, E[m - 2], E[m - 1], Einfty,\
-                                  nSteps, e, X, log_idos, log_sum_idos, L)
+                                  nSteps, e, X, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix)
 
         lAlpha[m] = alpha # <- overwrite since α_m was recalculated.
     #
@@ -218,11 +260,12 @@ for i in range(l):
 
 len(log_idos)
 len(E)
-plt.plot(E, [exp(log_idos[i]) for i in range(len(E))], 'o')
+nn = len(E) - 2
+plt.plot([E[i] for i in range(nn)], [exp(log_idos[i]) for i in range(nn)], 'o')
 
-plt.plot(E, [log_idos[i] for i in range(len(E))], 'o')
+plt.plot([E[i] for i in range(nn)], [log_idos[i] for i in range(nn)], 'o')
 
-plt.plot(E, lAlpha, 'o')
+plt.plot([E[i] for i in range(nn)],  [lAlpha[i] for i in range(nn)], 'o')
 
 ################################################################################
 # you have finished. Now you have `E` (list of Em=i) and log_idos (log(DOS_i))

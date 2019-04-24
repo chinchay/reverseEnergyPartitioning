@@ -32,10 +32,10 @@ def getRandomWalk3D(L):
 def addVectors(a, b): # `a` and `b` must have the same lenght!
     return [a[i] + b[i] for i in range(len(a))]
 
-def getNewConfig(i, X_old, L): # L ~amplitud of random walk
+def getNewConfig(i, X, L): # L ~amplitud of random walk
     # X_old is a vector with [r1,r2,r3,...,rNatoms] with the positions of every
     # atom of the configuration. ri = [x,y,z]
-    iAtom = i % len(X_old)
+    iAtom = i % len(X)
 
     # # Apply periodicity for deltaPosition:
     # if X_old[iAtom].isSlavePeriodic:
@@ -107,22 +107,25 @@ def getNewConfig(i, X_old, L): # L ~amplitud of random walk
     #     return X_old
 
 
-    X_old[iAtom] = addVectors( X_old[iAtom], getRandomWalk3D(L) )
-    return X_old
+    X[iAtom] = addVectors( X[iAtom], getRandomWalk3D(L) )
+    return X
 #
 
 ################################################################################
 def getEnergyConfig(X, a1, a2, a3):
     import potential
     from potential import VLJ as V
+    import harmonic as ha
     # E = 0
 
-    # E = potential.getTotalPotentialEnergy(X, V2)
-    E = potential.get3DPotNearFirstNeighb(X, V, a1, a2, a3)
-    # E = 0.2*(random()-0.5) - 0.56  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    # print(E)
-    # E = getEnergyFromStaticMTP(X) # do not relax!  <<<<<<<<<<<<<<<<<<<<<<<<<<<
-    return E
+    E, energyPerParticle = ha.get3DPotNearFirstNeighb(X, V, a1, a2, a3)
+
+        # E = potential.getTotalPotentialEnergy(X, V2)
+    # E = potential.get3DPotNearFirstNeighb(X, V, a1, a2, a3)
+        # E = 0.2*(random()-0.5) - 0.56  # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        # print(E)
+        # E = getEnergyFromStaticMTP(X) # do not relax!  <<<<<<<<<<<<<<<<<<<<<<<<<<<
+    return E, energyPerParticle
 #
 ################################################################################
 
@@ -149,22 +152,28 @@ def counter():
     counter.cnt += 1
     return counter.cnt
 
-def mc_move(i, E_old, X_old, E_m_minus_1, E_m_minus_2, L, a1, a2, a3):
+
+
+
+def mc_move(i, E_old, X_old, Xeq, forceMatrix, E_m_minus_1, E_m_minus_2, L, a1, a2, a3):
     import copy
-    Xtemp = copy.deepcopy( X_old )
-    X_new = getNewConfig(i, Xtemp, L) # L ~amplitud of random walk
-    E_new = getEnergyConfig(X_new, a1, a2, a3)
+    import harmonic as ha
+
+    X_new = copy.deepcopy( X_old )
+    X_new = getNewConfig(i, X_new, L) # L ~amplitud of random walk
+    E_new, energyPerParticle = getEnergyConfig(X_new, a1, a2, a3)
     P_old2new = getProbTransition(E_new, E_old, E_m_minus_1, E_m_minus_2)
     hasMoved = False
 
     if P_old2new >= random():
-        X_old = X_new
+        X_old = copy.deepcopy(X_new)
         E_old = E_new
         hasMoved = True
         ########################################################################################
         import os
         c = counter()
-        if (c % 1000 == 0):
+        if (c % 5 == 0):
+        # if (c % 1000 == 0):
             nAtoms = len(X_old)
             out = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/moves." + str(c) + ".xyz"
             pos = str(nAtoms) + "\n\n"
@@ -176,18 +185,55 @@ def mc_move(i, E_old, X_old, E_m_minus_1, E_m_minus_2, L, a1, a2, a3):
             f = open(out, "w")
             f.write(pos)
             f.close()
-        ########################################################################################
+
+            ########################################################
+            rHyper, deltaEharmonic = ha.getHarmonicEnergy(X_new, Xeq, forceMatrix)
+            out = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/rHyperEHarmonic" + str(c) + ".txt"
+            s = str(rHyper) + " , " + str(deltaEharmonic) + " , " +  str(E_new) + "\n"
+            f = open(out, "w")
+            f.write(s)
+            f.close()
+
+
+
+        #     # also, save the distances respect to the bottom of Lennard-Jones potential:
+        #     eqFile = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/equilibriumPositions.txt"
+        #     pos = str(nAtoms) + "\n\n"
+        #     with open(eqFile , "r") as ifile:
+        #         i = 0
+        #         for line in ifile:
+        #             Xequil = [ float( line.split()[j] ) for j in range(3) ]
+        #             dx = Xequil[0] - X_new[i][0]
+        #             dy = Xequil[1] - X_new[i][1]
+        #             dz = Xequil[2] - X_new[i][2]
+        #             # print(dx, dy, dz)
+        #             deltaR = ( dx**2 + dy**2 + dz**2 ) ** 0.5
+        #             pos += "H   " + str(deltaR) + "   " + str(energyPerParticle[i]) + "   " + str(0) + "\n"
+        #             i += 1
+        #         #
+        #         pos += "\n"
+        #     #
+        #     # feqFile.close()
+        #     outDeltaR = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/deltaRmoves." + str(c) + ".xyz"
+        #     foutDeltaR = open(outDeltaR,'w')
+        #     foutDeltaR.write(pos)
+        #     foutDeltaR.close()
+        # ########################################################################################
 
     #
     # print(E_old, E_new, P_old2new,  hasMoved, E_m_minus_1, E_m_minus_2, L)
     return E_old, X_old, hasMoved
+    # return E_old, X_old, hasMoved
+#
+
+
 #
 
 ################################################################################
 # MC sampling with weight w(E). Collect quantities for the next subdivision m+1.
 ################################################################################
 def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
-                  nSteps, e, X, log_idos, log_sum_idos, L, a1, a2, a3):
+                  nSteps, e, X, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix):
     lCfgs = [] # to save cfgs for the next subdivision.
     # where: lCfgs_m = [cfg_1, cfg_2, ..., cfg_i, ...]
     # where: cfg_i = [energy_i, X_i ]
@@ -206,7 +252,7 @@ def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
     ratioOfCfgsToSave = 0.5
     ratioAcceptances  = 0
     # L      = 0.1
-    repMax = 10 # maximum number of repetitions to get the appropriate ratio of
+    repMax = 3 #10 # maximum number of repetitions to get the appropriate ratio of
                # acceptances at a certain L value.
     repeat = 0
 
@@ -220,9 +266,9 @@ def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
         if (repeat > 0):
             if I2 == 0:
                 repeat = 0
-                L = 0.99 * L
-            elif ratioAcceptances > ratioMax: L = 1.01 * L
-            elif ratioAcceptances < ratioMax: L = 0.99 * L
+                # L = 0.99 * L
+            # elif ratioAcceptances > ratioMax: L = 1.01 * L
+            # elif ratioAcceptances < ratioMax: L = 0.99 * L
 
 
         [I1, I2] = [0, 0]
@@ -236,7 +282,12 @@ def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
         # Collect ehist for [Emin,E[m-1]] and [E[m-1],Em]:
         for i in range(nSteps):
             # get a configuration e,X after randomly move X:
-            e, X, hasMoved = mc_move(i, e, X, E_mMinus1, E_mMinus2, L, a1, a2, a3)
+
+            e, X, hasMoved = mc_move(i, e, X, Xeq, forceMatrix, E_mMinus1, E_mMinus2, L, a1, a2, a3)
+
+
+
+
             # it has no sense to add the same configuration (not moved) to Ω:
             if hasMoved:
                 acceptances += 1 # accepted move.
@@ -246,6 +297,7 @@ def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
                 # elif belongs(e, E_mMinus1 - 10, E_mMinus1): # (Emin <= e <= E[m - 1]):
                     I2 += 1  # un gol más para ∫_Emin^Em-1 Ω(E)dE
                 #
+
                 # randomly save some configs to use for the next subdivision:
                 if random() > ratioOfCfgsToSave: lCfgs.append([e, X])
             #
@@ -270,7 +322,7 @@ def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
             # print(I1, I2, e, hasMoved, belongs(e, E_mMinus1 - 10, E_mMinus1), belongs(e, Eminimo, E_mMinus1), belongs(e,E_mMinus1, E_m), L)
         #
         ratioAcceptances = acceptances / nSteps
-        print(ratioAcceptances, I1, I2, e, E_mMinus1, E_m, belongs(e, Eminimo, E_mMinus1), belongs(e,E_mMinus1, E_m), L, repeat)
+        print(ratioAcceptances, I2, I1, e, E_mMinus1, E_m, belongs(e, Eminimo, E_mMinus1), belongs(e,E_mMinus1, E_m), L, repeat)
     #===========================================================================
 
     # calculate α_m, log_idos:
