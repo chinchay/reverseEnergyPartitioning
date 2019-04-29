@@ -30,7 +30,9 @@ def getRandomWalk3D(L):
 #
 
 def addVectors(a, b): # `a` and `b` must have the same lenght!
-    return [a[i] + b[i] for i in range(len(a))]
+    from vectormath import Vector3 as Vector3
+    return Vector3([a[i] + b[i] for i in range(len(a))])
+
 
 def getNewConfig(i, X, L): # L ~amplitud of random walk
     # X_old is a vector with [r1,r2,r3,...,rNatoms] with the positions of every
@@ -152,28 +154,40 @@ def counter():
     counter.cnt += 1
     return counter.cnt
 
+def counterMin():
+    if 'cnt' not in counterMin.__dict__:
+        counterMin.cnt = 0
+    counterMin.cnt += 1
+    return counterMin.cnt
 
-
+# def moveHarmonic(i, X, Xeq, forceMatrix, L):
+#     import harmonic as ha
+#     X = getNewConfig(i, X, L)
+#     rHyper, deltaEharmonic = ha.getHarmonicEnergy(X, Xeq, forceMatrix)
+#     return rHyper, deltaEharmonic
 
 def mc_move(i, E_old, X_old, Xeq, forceMatrix, E_m_minus_1, E_m_minus_2, L, a1, a2, a3):
     import copy
     import harmonic as ha
 
-    X_new = copy.deepcopy( X_old )
-    X_new = getNewConfig(i, X_new, L) # L ~amplitud of random walk
+
+
+    Xtemp  = copy.deepcopy(X_old)
+    X_temp = getNewConfig(i, Xtemp, L)
+    X_new  = copy.deepcopy(X_temp)
     E_new, energyPerParticle = getEnergyConfig(X_new, a1, a2, a3)
     P_old2new = getProbTransition(E_new, E_old, E_m_minus_1, E_m_minus_2)
     hasMoved = False
 
-    if P_old2new >= random():
-        X_old = copy.deepcopy(X_new)
-        E_old = E_new
+    if ( P_old2new >= random() ):
         hasMoved = True
+
         ########################################################################################
         import os
         c = counter()
-        if (c % 5 == 0):
-        # if (c % 1000 == 0):
+        # if (c % 5 == 0):
+        # if (c % 100 == 0):
+        if (c % 1000 == 0):
             nAtoms = len(X_old)
             out = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/moves." + str(c) + ".xyz"
             pos = str(nAtoms) + "\n\n"
@@ -186,45 +200,104 @@ def mc_move(i, E_old, X_old, Xeq, forceMatrix, E_m_minus_1, E_m_minus_2, L, a1, 
             f.write(pos)
             f.close()
 
-            ########################################################
+            #######################################################
             rHyper, deltaEharmonic = ha.getHarmonicEnergy(X_new, Xeq, forceMatrix)
             out = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/rHyperEHarmonic" + str(c) + ".txt"
             s = str(rHyper) + " , " + str(deltaEharmonic) + " , " +  str(E_new) + "\n"
+            # s = str(rHyper) + " , " + str(deltaEharmonic) + "\n"
             f = open(out, "w")
             f.write(s)
             f.close()
 
 
-
-        #     # also, save the distances respect to the bottom of Lennard-Jones potential:
-        #     eqFile = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/equilibriumPositions.txt"
-        #     pos = str(nAtoms) + "\n\n"
-        #     with open(eqFile , "r") as ifile:
-        #         i = 0
-        #         for line in ifile:
-        #             Xequil = [ float( line.split()[j] ) for j in range(3) ]
-        #             dx = Xequil[0] - X_new[i][0]
-        #             dy = Xequil[1] - X_new[i][1]
-        #             dz = Xequil[2] - X_new[i][2]
-        #             # print(dx, dy, dz)
-        #             deltaR = ( dx**2 + dy**2 + dz**2 ) ** 0.5
-        #             pos += "H   " + str(deltaR) + "   " + str(energyPerParticle[i]) + "   " + str(0) + "\n"
-        #             i += 1
-        #         #
-        #         pos += "\n"
-        #     #
-        #     # feqFile.close()
-        #     outDeltaR = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/deltaRmoves." + str(c) + ".xyz"
-        #     foutDeltaR = open(outDeltaR,'w')
-        #     foutDeltaR.write(pos)
-        #     foutDeltaR.close()
-        # ########################################################################################
-
+        return E_new, X_new, hasMoved
     #
-    # print(E_old, E_new, P_old2new,  hasMoved, E_m_minus_1, E_m_minus_2, L)
-    return E_old, X_old, hasMoved
-    # return E_old, X_old, hasMoved
+    X = copy.deepcopy(X_old)
+    return E_old, X, hasMoved
+
+    # e, X, hasMoved = mc_move(i, e, X, Xeq, forceMatrix, E_mMinus1, E_mMinus2, L, a1, a2, a3)
+
+    # c = counter()
+    # rHyper, deltaEharmonic = moveHarmonic(i, X_old, Xeq, forceMatrix, L)
+    # out = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/rHyperEHarmonic" + str(c) + ".txt"
+    # # s = str(rHyper) + " , " + str(deltaEharmonic) + " , " +  str(E_new) + "\n"
+    # s = str(rHyper) + " , " + str(deltaEharmonic) + "\n"
+    # f = open(out, "w")
+    # f.write(s)
+    # f.close()
+
+
+    # X_new = copy.deepcopy( X_old )
+    # X_new = getNewConfig(i, X_new, L) # L ~amplitud of random walk
+    # E_new, energyPerParticle = getEnergyConfig(X_new, a1, a2, a3)
+    # P_old2new = getProbTransition(E_new, E_old, E_m_minus_1, E_m_minus_2)
+    # hasMoved = False
+
 #
+#
+#
+#     if P_old2new >= random():
+#         X_old = copy.deepcopy(X_new)
+#         E_old = E_new
+#         hasMoved = True
+#         ########################################################################################
+#         import os
+#         c = counter()
+#         if (c % 5 == 0):
+#         # if (c % 1000 == 0):
+#             nAtoms = len(X_old)
+#             out = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/moves." + str(c) + ".xyz"
+#             pos = str(nAtoms) + "\n\n"
+#             for i in range(len(X_new)):
+#                 pos += "H   " + str(X_new[i][0]) + "   " + str(X_new[i][1]) + "   " + str(X_new[i][2]) + "\n"
+#             #
+#             pos += "\n"
+#
+#             f = open(out, "w")
+#             f.write(pos)
+#             f.close()
+#
+#             ########################################################
+#             rHyper, deltaEharmonic = ha.getHarmonicEnergy(X_old, Xeq, forceMatrix)
+#             out = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/rHyperEHarmonic" + str(c) + ".txt"
+#             # s = str(rHyper) + " , " + str(deltaEharmonic) + " , " +  str(E_new) + "\n"
+#             s = str(rHyper) + " , " + str(deltaEharmonic) + "\n"
+#             f = open(out, "w")
+#             f.write(s)
+#             f.close()
+#
+#         #
+#         return E_old, X_old, hasMoved
+#
+#         #     # also, save the distances respect to the bottom of Lennard-Jones potential:
+#         #     eqFile = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/equilibriumPositions.txt"
+#         #     pos = str(nAtoms) + "\n\n"
+#         #     with open(eqFile , "r") as ifile:
+#         #         i = 0
+#         #         for line in ifile:
+#         #             Xequil = [ float( line.split()[j] ) for j in range(3) ]
+#         #             dx = Xequil[0] - X_new[i][0]
+#         #             dy = Xequil[1] - X_new[i][1]
+#         #             dz = Xequil[2] - X_new[i][2]
+#         #             # print(dx, dy, dz)
+#         #             deltaR = ( dx**2 + dy**2 + dz**2 ) ** 0.5
+#         #             pos += "H   " + str(deltaR) + "   " + str(energyPerParticle[i]) + "   " + str(0) + "\n"
+#         #             i += 1
+#         #         #
+#         #         pos += "\n"
+#         #     #
+#         #     # feqFile.close()
+#         #     outDeltaR = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/deltaRmoves." + str(c) + ".xyz"
+#         #     foutDeltaR = open(outDeltaR,'w')
+#         #     foutDeltaR.write(pos)
+#         #     foutDeltaR.close()
+#         # ########################################################################################
+#
+#     #
+#     # print(E_old, E_new, P_old2new,  hasMoved, E_m_minus_1, E_m_minus_2, L)
+#     return E_old, X_old, hasMoved
+#     # return E_old, X_old, hasMoved
+# #
 
 
 #
@@ -234,6 +307,10 @@ def mc_move(i, E_old, X_old, Xeq, forceMatrix, E_m_minus_1, E_m_minus_2, L, a1, 
 ################################################################################
 def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
                   nSteps, e, X, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix):
+    import copy
+    import harmonic as ha
+
+
     lCfgs = [] # to save cfgs for the next subdivision.
     # where: lCfgs_m = [cfg_1, cfg_2, ..., cfg_i, ...]
     # where: cfg_i = [energy_i, X_i ]
@@ -252,23 +329,28 @@ def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
     ratioOfCfgsToSave = 0.5
     ratioAcceptances  = 0
     # L      = 0.1
-    repMax = 3 #10 # maximum number of repetitions to get the appropriate ratio of
+    repMax = 1 #10 # maximum number of repetitions to get the appropriate ratio of
                # acceptances at a certain L value.
     repeat = 0
 
     ratioMin = 0.25
     ratioMax = 0.35
 
-    while( (not belongs(ratioAcceptances, ratioMin, ratioMax)) and (repeat < repMax) ):
+    while( (not belongs(ratioAcceptances, ratioMin, ratioMax) and\
+            (repeat < repMax) ) or\
+            continuar):
+
+        # print(condition1, condition2, continuar, finalCondition)
+        continuar = False
         # Reset energy histogram: ehist = [I1, I2].
         # I1 = c*∫_Em-1^Em Ω(E)dE;  I2 = c*∫_Emin^Em-1 Ω(E)dE, `c` is some constant.
 
-        if (repeat > 0):
-            if I2 == 0:
-                repeat = 0
-                # L = 0.99 * L
-            # elif ratioAcceptances > ratioMax: L = 1.01 * L
-            # elif ratioAcceptances < ratioMax: L = 0.99 * L
+        # if (repeat > 0):
+        #     if I2 == 0:
+        #         repeat = 0
+        #         # L = 0.99 * L
+        #     # elif ratioAcceptances > ratioMax: L = 1.01 * L
+        #     # elif ratioAcceptances < ratioMax: L = 0.99 * L
 
 
         [I1, I2] = [0, 0]
@@ -285,6 +367,27 @@ def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
 
             e, X, hasMoved = mc_move(i, e, X, Xeq, forceMatrix, E_mMinus1, E_mMinus2, L, a1, a2, a3)
 
+            # # Xo = copy.deepcopy(X)
+            # # assert(id(Xo) != id(X))
+            # # e, Xtemporal, hasMoved = mc_move(i, e, Xo, Xeq, forceMatrix, E_mMinus1, E_mMinus2, L, a1, a2, a3)
+            #
+            # # assert(id(Xo) != id(Xtemporal))
+            # # if (hasMoved == False):
+            # #     for k in range(len(Xo)):
+            # #         for l in range(3) :
+            # #             assert(Xo[k][l] == Xtemporal[k][l])
+            # #         #
+            # # X = copy.deepcopy(Xtemporal)
+            #
+            #
+            # c = counter()
+            # rHyper, deltaEharmonic = ha.getHarmonicEnergy(X, Xeq, forceMatrix)
+            # out = "/Users/chinchay/Documents/9_Git/reverseEnergyPartitioning/ovitoPlots/rHyperEHarmonic" + str(c) + ".txt"
+            # # s = str(rHyper) + " , " + str(deltaEharmonic) + " , " +  str(E_new) + "\n"
+            # s = str(rHyper) + " , " + str(deltaEharmonic) + "\n"
+            # f = open(out, "w")
+            # f.write(s)
+            # f.close()
 
 
 
@@ -323,6 +426,68 @@ def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
         #
         ratioAcceptances = acceptances / nSteps
         print(ratioAcceptances, I2, I1, e, E_mMinus1, E_m, belongs(e, Eminimo, E_mMinus1), belongs(e,E_mMinus1, E_m), L, repeat)
+
+
+        factor =  (I1 + 1) / (I2 + 1) # '+1' to avoid zeros
+        assert( len(lCfgs) != 0 )
+        if ( (I1 < 100) or (I2 < 100)):
+            # choose X with lower energy
+            print("A: choosing config with min energy ...")
+            nthMin = 1
+            e, X = select_start_config(lCfgs, E_mMinus1, E_m, nthMin)
+            continuar = True
+        elif factor < 1/100.0:
+            # choose X with higher energy
+            print("B: choosing config with high energy ...")
+            nthMin = 2
+            e, X = select_start_config(lCfgs, E_mMinus1, E_m, nthMin)
+            continuar = True
+        elif factor > 100:
+            # choose X with lower energy
+            print("C: choosing config with min energy ...")
+            nthMin = 1
+            e, X = select_start_config(lCfgs, E_mMinus1, E_m, nthMin)
+            continuar = True
+
+        #
+
+        # if ( (I1 < 100) or (I2 < 100)):
+        #     assert( len(lCfgs) != 0 )
+        #     print("choosing config with min energy ...")
+        #     nthMin = 1
+        #     e, X = select_start_config(lCfgs, E_mMinus1, E_m, nthMin)
+        #     c = counterMin()
+        #     if (c % 3 == 2):
+        #         print("choosing back ...")
+        #         nthMin = 3
+        #         e, X = select_start_config(lCfgs, E_mMinus1, E_m, nthMin)
+        #     #
+        #     # if (c % 5 == 4):
+        #     #     print("increasing nSteps ...")
+        #     #     nSteps = nSteps * 2
+        #     #
+        #     continuar = True
+
+        # if (not belongs(ratioAcceptances, ratioMin, ratioMax)):
+        #     assert( len(lCfgs) != 0 )
+        #     # print("choosing config with max energy ...")
+        #     # print("increasing L value ...")
+        #     # nthMin = 2
+        #     # e, Xtemp = select_start_config(lCfgs, E_mMinus1, E_m, nthMin)
+        #     # X = copy.deepcopy(Xtemp)
+        #
+        #     nthMin = 1
+        #     e, X = select_start_config(lCfgs, E_mMinus1, E_m, nthMin)
+        #     continuar = True
+        #
+        #     if ratioAcceptances <= ratioMin:
+        #         print("decreasing L value ...")
+        #         L = L / 1.2
+        #     elif ratioMax <= ratioAcceptances:
+        #         print("increasing L value ...")
+        #         L = L * 1.2
+        #     # continuar = True
+
     #===========================================================================
 
     # calculate α_m, log_idos:
@@ -338,19 +503,89 @@ def randomMCmoves(Eminimo, E_mMinus2, E_mMinus1, E_m,\
 
     return lCfgs, alpha, log_idos, log_sum_idos, L
 #
-def select_start_config(lCfgs, E_mMinus1, Em):
+def select_start_config(lCfgs, E_mMinus1, Em, nthMin):
+    import copy
     # "During each partitioning process, a set of configurations are randomly
     # stored, from which a correct starting configuration for the next
     # partitioning process is selected.""
-    import copy
-    for i in range(len(lCfgs)):
-        e, X = lCfgs[i]
-        if belongs(e, E_mMinus1, Em):
-            return e, X
+    # import copy
+    # for i in range(len(lCfgs)):
+    #     e, X = lCfgs[i]
+    #     if belongs(e, E_mMinus1, Em):
+    #         return e, X
+    # #
+    # #
+    # e = lCfgs[0][0]
+    # X = copy.deepcopy(lCfgs[0][1])
+    # return e, X # I don't know what is the "correct starting configuration"
+
+
+    # Xsaved = []
+    # esaved = []
+    # for i in range(len(lCfgs)):
+    #     e, X = lCfgs[i]
+    #     if belongs(e, E_mMinus1, Em):
+    #         esaved.append(e)
+    #         Xsaved.append(X)
+    # #
+
+    if nthMin == 1:
+        Xsaved = []
+        esaved = []
+        for i in range(len(lCfgs)):
+            e, X = lCfgs[i]
+            if belongs(e, E_mMinus1, Em):
+                esaved.append(e)
+                Xsaved.append(X)
+        #
+        if (len(esaved) > 0):
+            minE = min(esaved)
+            idx = esaved.index(minE)
+            X = Xsaved[idx]
+            return minE, X
+
+    elif nthMin == 2:
+        # l = sorted(set(esaved))
+        # n = int(len(l) / 2.0)
+        # n = len(l) - 1
+        # minE = l[n] # it is not mininum in fact
+        # minE = max(esaved)
+
+        Xsaved = []
+        esaved = []
+        for i in range(len(lCfgs)):
+            e, Xtemp = lCfgs[i]
+            X = copy.deepcopy(Xtemp)
+            if (Em < e):
+                esaved.append(e)
+                Xsaved.append(X)
+        #
+        minE = max(esaved)
+        idx = esaved.index(minE)
+        Xtemp = Xsaved[idx]
+        X = copy.deepcopy(Xtemp)
+        return minE, X
     #
-    e = lCfgs[0][0]
-    X = copy.deepcopy(lCfgs[0][1])
-    return e, X # I don't know what is the "correct starting configuration"
+    elif nthMin == 3:
+        Xsaved = []
+        esaved = []
+        for i in range(len(lCfgs)):
+            e, Xtemp = lCfgs[i]
+            X = copy.deepcopy(Xtemp)
+            if (e <  E_mMinus1):
+                esaved.append(e)
+                Xsaved.append(X)
+        #
+        minE = min(esaved)
+        idx = esaved.index(minE)
+        Xtemp = Xsaved[idx]
+        X = copy.deepcopy(Xtemp)
+        return minE, X
+
+
+    # idx = esaved.index(minE)
+    # X = Xsaved[idx]
+    # return minE, X
 
 
 #

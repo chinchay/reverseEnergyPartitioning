@@ -40,7 +40,7 @@ Emin
 len(Xeq)
 
 #deltaE = 0.1 #0.1 described respect to Emin: deltaE = Energy - Emin
-deltaE = 1 # == f*d
+deltaE = 0.1 #1 == f*d
 # deltaE = abs( 2.5 * Emin / len(lAtomsEquilibrium))
 deltaE
 E1 = Emin + deltaE
@@ -168,13 +168,21 @@ m = 3  #<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 E = [Emin, E1, E2] # = [E0, E1, E2]
 
 E
+
+
+[Emin - Emin, E1 - Emin, E2 - Emin, mc.getEm(lAlpha[m - 1], E[m - 1], E[m - 2]) - Emin]
+
 [E1-Emin, E2-E1, mc.getEm(1, E[3 - 1], E[3 - 2]) -E2]
 [E1-Emin, E2-E1, E2+(E2-E1)/(E1-Emin) -E2]
 
+mc.getWeigth(E2 + 0.0001, E[m - 1], E[m - 2])
+
+
+
 ################################################################################
 continuar = True
-iMax   = 30 #10 #100 #15 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-nSteps =  5000 #20000 #1000 #5000 # 500 #50#  = nBarridos * nAtomsInConfig
+iMax   = 100 #30 #10 #100 #15 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+nSteps =  20000 #5000 #20000 #1000 #5000 # 500 #50#  = nBarridos * nAtomsInConfig
 alphaMin = 0.01#0.5 # the same as the paper. "At this point, the newly guessed Em is
                # deleted and then a set of random (all moves are accepted) MC
                # moves are performed... more info about how to do the last part.
@@ -188,9 +196,18 @@ e = Emin
 X = copy.deepcopy(Xeq)
 
 # Main Reverse Energy Partitioning loop:
-L = 0.1 #0.1 #0.01  #0.01 #0.2 #0.5 # 0.1#  ~amplitud of random walk
-i = 0
+#L = 0.005 #0.05 #0.1 #0.01  #0.01 #0.2 #0.5 # 0.1#  ~amplitud of random walk
+L = 0.01 #0.01
 
+L0 = L
+i = 0
+nSteps0 = nSteps
+
+# aa = [10,20, 20,30,40]
+# aa.index(20)
+# aa = [6,5,4,4,2,1,10,1,2,48]
+# set(aa)
+# sorted(set(aa))
 
 
 
@@ -207,6 +224,9 @@ while ( continuar and (i < iMax) ): # iMax allows to force stopping.
     Em
     E.append(Em)
 
+
+    [Emin-Emin, E[m - 2]-Emin, E[m - 1]-Emin, E[m]-Emin]
+
     # X = get
     # e = mc.getEnergyConfig(X)
 
@@ -216,11 +236,32 @@ while ( continuar and (i < iMax) ): # iMax allows to force stopping.
                         mc.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
                                       nSteps, e, Xcopy, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix)
 
+    #
+
+    # if ((alpha < 0.5) and (i < 30)):
+    #     print("because alpha is < 0.5, we will repeat the step.")
+    #     print(E[m])
+    #     E[m] = E[m] + 0.1
+    #     # nn = len(E) - 1
+    #     # Em = E[nn]
+    #     # print(Em)
+    #     # # Em += 0.1 #((E[m - 1] - E[m - 2]) * 10)
+    #     # del E[nn]
+    #     # E.append(Em)
+    #     m -= 1
+    # #
+    #
+
+
+
+    L = L0
+    nSteps = nSteps0
     lAlpha.append(alpha) # alpha = α_m
 
     # select a starting configuration for the next subdivision:
     assert( len(lCfgs) != 0 )
-    e, X = mc.select_start_config(lCfgs, E[m - 1], E[m])
+    nthMin = 1
+    e, X = mc.select_start_config(lCfgs, E[m - 1], E[m], nthMin)
 
     #---------------
     m += 1 # update the number of energy subdivisions m:
@@ -260,7 +301,7 @@ for i in range(l):
 
 len(log_idos)
 len(E)
-nn = len(E) - 2
+nn = len(E) #- 2
 plt.plot([E[i] for i in range(nn)], [exp(log_idos[i]) for i in range(nn)], 'o')
 
 plt.plot([E[i] for i in range(nn)], [log_idos[i] for i in range(nn)], 'o')

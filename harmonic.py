@@ -465,11 +465,21 @@ def getHarmonicEnergy(X, Xeq, forceMatrix):
 
     dw = []
     for i in range(nAtoms):
+
         # dX.append(X[i] - Xeq[i])
         dw.append(X[i][0] - Xeq[i][0])
         dw.append(X[i][1] - Xeq[i][1])
         dw.append(X[i][2] - Xeq[i][2])
+
+        # # Do not consider translation, then describe everyone respect to one atom:
+        # # dX.append(X[i] - Xeq[i])
+        # dw.append( (X[i][0] - X[0][0]) - (Xeq[i][0] - Xeq[0][0]) )
+        # dw.append( (X[i][1] - X[0][1]) - (Xeq[i][1] - Xeq[0][1]) )
+        # dw.append( (X[i][2] - X[0][2]) - (Xeq[i][2] - Xeq[0][2]) )
+
+
     #
+
 
     deltaEharmonic = 0
     dimension = 3 * nAtoms
@@ -488,8 +498,13 @@ def getHarmonicEnergy(X, Xeq, forceMatrix):
     #
 
     rHyper = 0
-    for i in range(dimension):
-        rHyper += dw[i] ** 2
+    # for i in range(dimension):
+    #     rHyper += dw[i] ** 2
+
+    for i in range(nAtoms):
+        rHyper += (X[i][0]-X[0][0])**2 +\
+                  (X[i][1]-X[0][1])**2 +\
+                  (X[i][2]-X[0][2])**2        
     #
 
     rHyper = rHyper ** 0.5
