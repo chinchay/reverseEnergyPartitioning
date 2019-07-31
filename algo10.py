@@ -16,10 +16,11 @@ from potential import VLJ as V
 import numpy as np
 from scipy.integrate import simps # Integrating using Samples
 
-import mcFunctions as mc
+import mcFunctions10 as mc
 import harmonic as ha
 
-
+import crystal as cr
+# import numpy as np
 
 
 
@@ -28,10 +29,30 @@ import harmonic as ha
 # For the project, MTP or DFT?? will give the equilibrium positions.
 # lAtomsEquilibrium, a1, a2, a3 = potential.getAtomsAtEquilibriumPositions()
 
-Xeq, a1, a2, a3, Emin, forceMatrix = ha.getConfigEquilibrium()
-a1
-a2
-a3
+
+structEq = cr.getFccEquilibrium()
+#1.1
+radio    = 3.1 * structEq[0].distance(structEq[1]) # for first nearest neighbors
+Emin     = cr.getEnergy(structEq, radio, [])
+indxNeigsFromEachSite = cr.getIndxNeigsFromEachSite(structEq, radio)
+dRneighborsFromEachSite = cr.getDRneighborsFromEachSite(structEq, radio)
+forceMatrix = cr.getForceMatrix(structEq, indxNeigsFromEachSite, dRneighborsFromEachSite, radio)
+
+# structEq[0].coords
+# structEq
+
+Emin / structEq.num_sites
+# Emin(n=3)=162.0 / 27atoms = 6ligaciones ok
+
+# from vectormath import Vector3 as Vector3
+# a1 = Vector3([0.70710678, 0.70710678, 0.        ])
+# a2 = Vector3([0.        , 0.70710678, 0.70710678])
+# a3 = Vector3([0.70710678, 0.        , 0.70710678])
+
+# Xeq, a1, a2, a3, Emin, forceMatrix = ha.getConfigEquilibrium()
+# a1
+# a2
+# a3
 # lAtomsEquilibrium, a1, a2, a3, Emin = ha.getAtomsAtEquilibriumPositions()
 
 
@@ -44,7 +65,7 @@ a3
 
 
 #deltaE = 0.1 #0.1 described respect to Emin: deltaE = Energy - Emin
-deltaE = 0.1 #1 == f*d
+deltaE = 1 #1 == f*d
 # deltaE = abs( 2.5 * Emin / len(lAtomsEquilibrium))
 deltaE
 E1 = Emin + deltaE
@@ -179,14 +200,14 @@ E
 [E1-Emin, E2-E1, mc.getEm(1, E[3 - 1], E[3 - 2]) -E2]
 [E1-Emin, E2-E1, E2+(E2-E1)/(E1-Emin) -E2]
 
-mc.getWeigth(E2 + 0.0001, E[m - 1], E[m - 2])
+# mc.getWeigth(E2 + 0.0001, E[m - 1], E[m - 2])
 
 
 
 ################################################################################
 continuar = True
 iMax   = 100 #30 #10 #100 #15 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-nSteps =  1000 #20000 #5000 #20000 #1000 #5000 # 500 #50#  = nBarridos * nAtomsInConfig
+nSteps =  5000 #5000 #20000 #5000 #20000 #1000 #5000 # 500 #50#  = nBarridos * nAtomsInConfig
 alphaMin = 0.01#0.5 # the same as the paper. "At this point, the newly guessed Em is
                # deleted and then a set of random (all moves are accepted) MC
                # moves are performed... more info about how to do the last part.
@@ -196,12 +217,34 @@ alphaMin = 0.01#0.5 # the same as the paper. "At this point, the newly guessed E
 # e, X = Emin, [lAtomsEquilibrium[i].position for i in range(len(lAtomsEquilibrium))]
 
 import copy
+
+
+
+
+# structEq
+# convert 'structX' to a simple array of coordinates `X`:
+# Xeq = [list(structEq[i].coords) for i in range(structEq.num_sites)]
+Xeq = [list(structEq[i].frac_coords) for i in range(structEq.num_sites)]
+
+from vectormath import Vector3 as Vector3
+Xeq = [ Vector3(list(structEq[i].frac_coords)) for i in range(structEq.num_sites)]
+# Xeq
+
+X = copy.deepcopy(Xeq)
+# X
+
+# structEq[0]
+# structEq[0].coords
+# structEq[0].frac_coords
+
 e = Emin
 X = copy.deepcopy(Xeq)
 
 # Main Reverse Energy Partitioning loop:
 #L = 0.005 #0.05 #0.1 #0.01  #0.01 #0.2 #0.5 # 0.1#  ~amplitud of random walk
-L = 0.01 #0.01
+L = 0.0025 #0.01
+# now L is deviation in fractional coordinates <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 
 L0 = L
 i = 0
@@ -213,6 +256,36 @@ nSteps0 = nSteps
 # set(aa)
 # sorted(set(aa))
 
+
+
+
+# Em = mc.getEm(lAlpha[m - 1], E[m - 1], E[m - 2])
+# Em
+# E.append(Em)
+
+
+# print(structEq[0])
+# print(X[0])
+# structEq.coords
+
+# [Emin-Emin, E[m - 2]-Emin, E[m - 1]-Emin, E[m]-Emin]
+# dRneighborsFromEachSite
+# X = get
+# e = mc.getEnergyConfig(X)
+
+# # MC sampling. Collect quantities for the next subdivision m+1.
+# Xcopy = copy.deepcopy(X)
+# lCfgs, alpha, log_idos, log_sum_idos, L =\
+#                     mc.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
+#                                   nSteps, e, Xcopy, log_idos, log_sum_idos, L, structEq, dRneighborsFromEachSite, Xeq, forceMatrix)
+#
+#
+# import random
+# random.random()
+
+# iii
+# ooo
+# i=0
 while ( continuar and (i < iMax) ): # iMax allows to force stopping.
     i += 1
 
@@ -225,20 +298,84 @@ while ( continuar and (i < iMax) ): # iMax allows to force stopping.
     Em = mc.getEm(lAlpha[m - 1], E[m - 1], E[m - 2])
     Em
     E.append(Em)
-
+    print("Em = ", Em, E[m], m)
 
     [Emin-Emin, E[m - 2]-Emin, E[m - 1]-Emin, E[m]-Emin]
 
     # X = get
     # e = mc.getEnergyConfig(X)
 
+    ############################################################################
+    # PARALLEL WORK
+    ############################################################################
     # MC sampling. Collect quantities for the next subdivision m+1.
     Xcopy = copy.deepcopy(X)
-    lCfgs, alpha, log_idos, log_sum_idos, L =\
-                        mc.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
-                                      nSteps, e, Xcopy, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix)
 
     #
+    import multiprocessing as mp
+    print("Number of processors: ", mp.cpu_count())
+    nProcessors = int(mp.cpu_count() / 2)
+    # nProcessors = mp.cpu_count()
+    # nProcessors
+    # Define an output queue
+    output = mp.Queue()
+
+    # mpiexec -n 8 python  code.py #ok  mpi4py
+    # python -n 8 code.py
+
+
+
+
+    # Setup a list of processes that we want to run
+    # processes = [mp.Process(target=rand_string, args=(5, x, output)) for x in range(4)]
+    processes = [mp.Process(target=mc.randomMCmovesParallel, args=( \
+                                            Emin, E[m - 2], E[m - 1], E[m],\
+                                            nSteps, e, Xcopy, L, structEq,\
+                                            Xeq, forceMatrix,\
+                                            output)) for x in range(nProcessors)]
+
+
+
+    # lCfgs, alpha, log_idos, log_sum_idos, L =\
+    #                     mc.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
+    #                                   nSteps, e, Xcopy, log_idos, log_sum_idos, L, Xeq, forceMatrix)
+
+
+    # Run processes
+    for p in processes:
+        p.start()
+
+    # Exit the completed processes
+    # for p in processes:
+    #     p.join()
+
+    # Get process results from the output queue
+    results = [output.get() for p in processes]
+
+    # organize results:
+    lCfgs, alpha, log_idos, log_sum_idos = mc.getValuesAfterParallelWork(results, log_idos, log_sum_idos)
+
+    # sizeResults = len(results)
+    # # lCfgs = [results[i][0] for i in range(sizeResults)]
+    # lCfgs = []
+    # for i in range(sizeResults):
+    #     lCfgs += results[i][0]
+    # # lCfgs = results[0][0] + results[1][0] + results[2][0] + results[3][0] + results[4][0] + results[5][0] + results[6][0] + results[7][0]
+    # alpha = [results[i][1] for i in range(sizeResults)]
+    # log_idos = [results[i][2] for i in range(sizeResults)]
+    # log_sum_idos = [results[i][3] for i in range(sizeResults)]
+
+    # lCfgs
+
+    # alpha
+
+    # len(log_idos)
+
+    # lCfgs[0]
+
+
+    # END OF PARALLEL WORK
+    ############################################################################
 
     # if ((alpha < 0.5) and (i < 30)):
     #     print("because alpha is < 0.5, we will repeat the step.")
@@ -280,15 +417,59 @@ while ( continuar and (i < iMax) ): # iMax allows to force stopping.
         Einfty = E[m - 1] + 10000 # Einfty -> \infty # "all moves are accepted"
         # I think E[m] is infty now... should I overwrite E[m]????? <<<<<<<<<<<<
 
-        # do a set of random MC moves and collect ehist above and below E[m-1]:
-        lCfgs, alpha, log_idos, log_sum_idos, L =\
-                    mc.randomMCmoves(Emin, E[m - 2], E[m - 1], Einfty,\
-                                  nSteps, e, X, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix)
+        # # do a set of random MC moves and collect ehist above and below E[m-1]:
+        # lCfgs, alpha, log_idos, log_sum_idos, L =\
+        #             mc.randomMCmoves(Emin, E[m - 2], E[m - 1], Einfty,\
+        #                           nSteps, e, Xcopy, log_idos, log_sum_idos, L, Xeq, forceMatrix)
+
+
+        ############################################################################
+        print("Number of processors: ", mp.cpu_count())
+        nProcessors = int(mp.cpu_count() / 2)
+        # nProcessors = mp.cpu_count()
+
+        # Define an output queue
+        output = mp.Queue()
+
+        # Setup a list of processes that we want to run
+        processes = [mp.Process(target=mc.randomMCmovesParallel, args=( \
+                                                Emin, E[m - 2], E[m - 1], Einfty,\
+                                                nSteps, e, Xcopy, L, structEq,\
+                                                Xeq, forceMatrix,\
+                                                output)) for x in range(nProcessors)]
+
+        # Run processes
+        for p in processes:
+            p.start()
+
+        # Exit the completed processes
+        # for p in processes:
+        #     p.join()
+
+        # Get process results from the output queue
+        results = [output.get() for p in processes]
+
+        # organize results:
+        lCfgs, alpha, log_idos, log_sum_idos = mc.getValuesAfterParallelWork(results, log_idos, log_sum_idos)
+        ############################################################################
+
 
         lAlpha[m] = alpha # <- overwrite since α_m was recalculated.
     #
 #
-E
+    E
+
+################################################################################
+# you have finished. Now you have `E` (list of Em=i) and log_idos (log(DOS_i))
+################################################################################
+path = os.getcwd()
+fileName = "out.txt"
+f = open(path + "/" + fileName, "w")
+for m in range(len(E)):
+    f.write(E[m], log_idos[m], lAlpha[m])
+#
+f.close()
+################################################################################
 
 # normalize Ω (taking advantage of logarith property when substracting):
 log_idos = [log_idos[i] - log_sum_idos for i in range(len(log_idos)) ]
@@ -310,16 +491,16 @@ plt.plot([E[i] for i in range(nn)], [log_idos[i] for i in range(nn)], 'o')
 
 plt.plot([E[i] for i in range(nn)],  [lAlpha[i] for i in range(nn)], 'o')
 
-################################################################################
-# you have finished. Now you have `E` (list of Em=i) and log_idos (log(DOS_i))
-################################################################################
-path = os.getcwd()
-fileName = "out.txt"
-f = open(path + "/" + fileName, "w")
-for m in range(len(E)):
-    f.write(E[m], log_idos[m], lAlpha[m])
-#
-f.close()
-################################################################################
+# ################################################################################
+# # you have finished. Now you have `E` (list of Em=i) and log_idos (log(DOS_i))
+# ################################################################################
+# path = os.getcwd()
+# fileName = "out.txt"
+# f = open(path + "/" + fileName, "w")
+# for m in range(len(E)):
+#     f.write(E[m], log_idos[m], lAlpha[m])
+# #
+# f.close()
+# ################################################################################
 #
 #

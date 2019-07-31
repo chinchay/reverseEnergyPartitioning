@@ -15,11 +15,11 @@ def belongs(x, xmin, xmax):
     return (xmin <= x) and (x <= xmax)
 #
 
-def productSqE(ε):
+def productSqE(eig):
     import math
     from functools import reduce
     # http://book.pythontips.com/en/latest/map_filter.html
-    product = reduce( (lambda x, y: x * y), ε )
+    product = reduce( (lambda x, y: x * y), eig )
     return 1 / math.sqrt( product )
 #
 
@@ -35,17 +35,14 @@ def getForceMatrix():
     return F #returns a numpy array
 #
 
-# function findEigen()
-#     ε = eigvals( getForceMatrix() )
-#     return ε
-# end
 
 
-def getRidZeros(ε):
+
+def getRidZeros(eig):
     # harmonic oscillator has non-negative eigenvalues!
-    # ε[k] != 0.0
+    # eig[k] != 0.0
     positives = []
-    [positives.append(ε[k]) if ε[k] > 0 else None for k in range(len(ε)) ]
+    [positives.append(eig[k]) if eig[k] > 0 else None for k in range(len(eig)) ]
     return positives
 #
 
@@ -84,7 +81,7 @@ def harmonicDOS(V, dE):
     The expression V(x1,x2) is a particular case of the rotated parabole
     equation:
     Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0
-    rotated by an angle θ that tan(2θ) = B / (A-C)
+    rotated by an angle theta that tan(2theta) = B / (A-C)
     A particular case: V(x1,x2) = A*x1^2 - 2*sqrt(A*C) + C*x2^2
                                 = (A*x1 - B*x2)^2
     which can represent the interaction of two particles joined by a string.
@@ -95,21 +92,21 @@ def harmonicDOS(V, dE):
 
     # For a complex Hermitian or real symmetric matrix: eigvalsh
     # getForceMatrix() returns a numpy array... OK
-    ε = LA.eigvalsh( getForceMatrix() ) # ε is a numpy array
+    eig = LA.eigvalsh( getForceMatrix() ) # eig is a numpy array
 
-    ε = getRidZeros(ε) # paper: "zeros do not contribute to DOS"
-    # ε is now an array, not a numpy array!
+    eig = getRidZeros(eig) # paper: "zeros do not contribute to DOS"
+    # eig is now an array, not a numpy array!
 
-    D = len(ε) # D = 3N-3, but here it's not necessary to substract -3 since
+    D = len(eig) # D = 3N-3, but here it's not necessary to substract -3 since
                   # we already got rid of zeros.
     Dm = D / 2.0
     N  = (D + 3) / 3.0 # comes from solving D = 3N-3
-    π = math.pi
+    pi = math.pi
 
     c  = coef(N, V)
-    m1 = productSqE(ε) # not zeros!
+    m1 = productSqE(eig) # not zeros!
     m2 = ( 2 * dE ) ** ( Dm  - 1 )
-    m3 = 2 * ( π ** Dm ) / math.gamma(Dm)
+    m3 = 2 * ( pi ** Dm ) / math.gamma(Dm)
 
     return c * m1 * m2 * m3
 #
@@ -136,7 +133,7 @@ def harmonicDOSParticles(V, dE):
     The expression V(x1,x2) is a particular case of the rotated parabole
     equation:
     Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0
-    rotated by an angle θ that tan(2θ) = B / (A-C)
+    rotated by an angle theta that tan(2theta) = B / (A-C)
     A particular case: V(x1,x2) = A*x1^2 - 2*sqrt(A*C) + C*x2^2
                                 = (A*x1 - B*x2)^2
     which can represent the interaction of two particles joined by a string.
@@ -147,26 +144,26 @@ def harmonicDOSParticles(V, dE):
 
     # For a complex Hermitian or real symmetric matrix: eigvalsh
     # getForceMatrix() returns a numpy array... OK
-    ε = LA.eigvalsh( getForceMatrix() ) # ε is a numpy array
+    eig = LA.eigvalsh( getForceMatrix() ) # eig is a numpy array
 
 
 
-    ε = getRidZeros(ε) # paper: "zeros do not contribute to DOS"
-    # ε is now an array, not a numpy array!
+    eig = getRidZeros(eig) # paper: "zeros do not contribute to DOS"
+    # eig is now an array, not a numpy array!
 
-#    D = len(ε) # D = 3N-3, but here it's not necessary to substract -3 since
+#    D = len(eig) # D = 3N-3, but here it's not necessary to substract -3 since
                   # we already got rid of zeros.
 
-    D = len(ε) - 1 # D = 3N-3, when all are particles, no external potential. Discounting one particle. All other particles will be described respect to it.
+    D = len(eig) - 1 # D = 3N-3, when all are particles, no external potential. Discounting one particle. All other particles will be described respect to it.
 
     Dm = D / 2.0
     N  = (D + 3) / 3.0 # comes from solving D = 3N-3
-    π = math.pi
+    pi = math.pi
 
     c  = coef(N, V)
-    m1 = productSqE(ε) # not zeros!
+    m1 = productSqE(eig) # not zeros!
     m2 = ( 2 * dE ) ** ( Dm  - 1 )
-    m3 = 2 * ( π ** Dm ) / math.gamma(Dm)
+    m3 = 2 * ( pi ** Dm ) / math.gamma(Dm)
 
     return c * m1 * m2 * m3
 #

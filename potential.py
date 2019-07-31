@@ -10,18 +10,18 @@ def VLJ(r):
 
     """
     Lennard-Jones potential
-    ε  is the depth of the potential well.
-    At rm, the potential function has the value −ε.
+    eps  is the depth of the potential well.
+    At rm, the potential function has the value -eps.
     """
     rm  = 1.0
-    ε  = 1.0
+    eps  = 1.0
 
     # getting atoms separation:
     # rVector = atomA.position - atomB.position
     # r = rVector.length # module
 
     # test if atomA and atomB are in the same position!
-    δ = 1.0E-5
+    delta = 1.0E-5
     if ( (-1.0E-5 < r) and (r < 1.0E-5) ):
         raise Exception('r == 0 ?? The value of r was: {}'.format(x))
 
@@ -31,7 +31,7 @@ def VLJ(r):
     # attraction at long ranges (van der Waals force, or dispersion force??)
     attractive = -2 * ( (rm / r) ** 6 )
 
-    return ε * ( repulsive + attractive )
+    return eps * ( repulsive + attractive )
 #
 
 def VLJ2(rA, rB):
@@ -45,18 +45,18 @@ def VLJ2(rA, rB):
 
     """
     Lennard-Jones potential
-    ε  is the depth of the potential well.
-    At rm, the potential function has the value −ε.
+    eps  is the depth of the potential well.
+    At rm, the potential function has the value -eps.
     """
     rm  = 1.0
-    ε  = 1.0
+    eps  = 1.0
 
     # getting atoms separation:
     rVector = [rA[i] - rB[i] for i in range(3)]
     r = math.sqrt(rVector[0]**2 + rVector[1]**2 + rVector[2]**2)
 
     # test if atomA and atomB are in the same position!
-    δ = 1.0E-5
+    delta = 1.0E-5
     if ( (-1.0E-5 < r) and (r < 1.0E-5) ):
         raise Exception('r == 0 ?? The value of r was: {}'.format(x))
 
@@ -72,7 +72,7 @@ def VLJ2(rA, rB):
     # if (r > 1.3 * rm):
         # return 0
 
-    return ε * ( repulsive + attractive )
+    return eps * ( repulsive + attractive )
 #
 
 class Atom:

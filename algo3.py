@@ -16,10 +16,12 @@ from potential import VLJ as V
 import numpy as np
 from scipy.integrate import simps # Integrating using Samples
 
-import mcFunctions as mc
+# import mcFunctions as mc
+import mcFunctions2 as mc2
 import harmonic as ha
 
-
+import crystal as cr
+import numpy as np
 
 
 
@@ -28,11 +30,40 @@ import harmonic as ha
 # For the project, MTP or DFT?? will give the equilibrium positions.
 # lAtomsEquilibrium, a1, a2, a3 = potential.getAtomsAtEquilibriumPositions()
 
-Xeq, a1, a2, a3, Emin, forceMatrix = ha.getConfigEquilibrium()
-a1
-a2
-a3
+# Xeq, a1, a2, a3, Emin, forceMatrix = ha.getConfigEquilibrium()
+# structEq = cr.getStruct() # to be used from cfg of mtp
+structEq = cr.getFccEquilibrium()
+radio    = 1.1 * structEq[0].distance(structEq[1]) # for first nearest neighbors
+Emin     = cr.getEnergy(structEq, radio, [])
+
+indxNeigsFromEachSite = cr.getIndxNeigsFromEachSite(structEq, radio)
+dRneighborsFromEachSite = cr.getDRneighborsFromEachSite(structEq, radio)
+forceMatrix = cr.getForceMatrix(structEq, indxNeigsFromEachSite, dRneighborsFromEachSite, radio)
+
+Emin
+# forceMatrix
+
+# structEq.num_sites
+#
+# structEq[0].coords
+# structEq[0].y
+# # structEq[0].coords + structEq[0].coords
+# # structEq[0].coords = structEq[0].coords + np.array([10,20,30])
+#
+# structEq[1].specie
+# structEq[0] = structEq[1].specie, structEq[0].coords + np.array([10,20,30])
+#
+# structEq[0]
+#
+# structEq[1].frac_coords
+# ss = structEq[1]
+# aa = ss.specie
+# aa
+# structEq[2]
+# structEq.cart_coords
+# i
 # lAtomsEquilibrium, a1, a2, a3, Emin = ha.getAtomsAtEquilibriumPositions()
+
 
 
 # Atoms as harmonic oscillators with potential V.
@@ -44,7 +75,7 @@ a3
 
 
 #deltaE = 0.1 #0.1 described respect to Emin: deltaE = Energy - Emin
-deltaE = 0.1 #1 == f*d
+deltaE = 1 #0.1  #1 == f*d
 # deltaE = abs( 2.5 * Emin / len(lAtomsEquilibrium))
 deltaE
 E1 = Emin + deltaE
@@ -174,19 +205,19 @@ E = [Emin, E1, E2] # = [E0, E1, E2]
 E
 
 
-[Emin - Emin, E1 - Emin, E2 - Emin, mc.getEm(lAlpha[m - 1], E[m - 1], E[m - 2]) - Emin]
+[Emin - Emin, E1 - Emin, E2 - Emin, mc2.getEm(lAlpha[m - 1], E[m - 1], E[m - 2]) - Emin]
 
-[E1-Emin, E2-E1, mc.getEm(1, E[3 - 1], E[3 - 2]) -E2]
+[E1-Emin, E2-E1, mc2.getEm(1, E[3 - 1], E[3 - 2]) -E2]
 [E1-Emin, E2-E1, E2+(E2-E1)/(E1-Emin) -E2]
 
-mc.getWeigth(E2 + 0.0001, E[m - 1], E[m - 2])
+mc2.getWeigth(E2 + 0.0001, E[m - 1], E[m - 2])
 
 
 
 ################################################################################
 continuar = True
 iMax   = 100 #30 #10 #100 #15 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-nSteps =  1000 #20000 #5000 #20000 #1000 #5000 # 500 #50#  = nBarridos * nAtomsInConfig
+nSteps =  20000 #5000 #20000 #1000 #5000 # 500 #50#  = nBarridos * nAtomsInConfig
 alphaMin = 0.01#0.5 # the same as the paper. "At this point, the newly guessed Em is
                # deleted and then a set of random (all moves are accepted) MC
                # moves are performed... more info about how to do the last part.
@@ -197,8 +228,17 @@ alphaMin = 0.01#0.5 # the same as the paper. "At this point, the newly guessed E
 
 import copy
 e = Emin
+# X = copy.deepcopy(Xeq)
+
+
+
+# convert 'structX' to a simple array of coordinates `X`:
+Xeq = [list(structEq[i].coords) for i in range(structEq.num_sites)]
 X = copy.deepcopy(Xeq)
 
+
+# structX = copy.deepcopy(structEq)
+# structX
 # Main Reverse Energy Partitioning loop:
 #L = 0.005 #0.05 #0.1 #0.01  #0.01 #0.2 #0.5 # 0.1#  ~amplitud of random walk
 L = 0.01 #0.01
@@ -213,6 +253,30 @@ nSteps0 = nSteps
 # set(aa)
 # sorted(set(aa))
 
+
+
+import mcFunctions3 as mc3
+Em = mc2.getEm(lAlpha[m - 1], E[m - 1], E[m - 2])
+Em
+E.append(Em)
+
+
+
+Xcopy = copy.deepcopy(X)
+
+
+
+
+mc3.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
+              nSteps, e, Xcopy, log_idos, log_sum_idos, L, Xeq, forceMatrix)
+
+
+mc3.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
+              nSteps, e, Xcopy, log_idos, log_sum_idos, L, radio, dRneighborsFromEachSite, Xeq, forceMatrix)
+
+
+iii
+
 while ( continuar and (i < iMax) ): # iMax allows to force stopping.
     i += 1
 
@@ -222,7 +286,7 @@ while ( continuar and (i < iMax) ): # iMax allows to force stopping.
     # else:
     #     Em = mc.getEm(lAlpha[m - 1], E[m - 1], E[m - 2])
 
-    Em = mc.getEm(lAlpha[m - 1], E[m - 1], E[m - 2])
+    Em = mc2.getEm(lAlpha[m - 1], E[m - 1], E[m - 2])
     Em
     E.append(Em)
 
@@ -233,10 +297,13 @@ while ( continuar and (i < iMax) ): # iMax allows to force stopping.
     # e = mc.getEnergyConfig(X)
 
     # MC sampling. Collect quantities for the next subdivision m+1.
-    Xcopy = copy.deepcopy(X)
+    structXcopy = copy.deepcopy(structX)
+    # lCfgs, alpha, log_idos, log_sum_idos, L =\
+    #                     mc.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
+    #                                   nSteps, e, Xcopy, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix)
     lCfgs, alpha, log_idos, log_sum_idos, L =\
-                        mc.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
-                                      nSteps, e, Xcopy, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix)
+                        mc2.randomMCmoves(Emin, E[m - 2], E[m - 1], E[m],\
+                                      nSteps, e, structXcopy, log_idos, log_sum_idos, L, a1, a2, a3, structEq, forceMatrix, radio)
 
     #
 
@@ -281,9 +348,12 @@ while ( continuar and (i < iMax) ): # iMax allows to force stopping.
         # I think E[m] is infty now... should I overwrite E[m]????? <<<<<<<<<<<<
 
         # do a set of random MC moves and collect ehist above and below E[m-1]:
+        # lCfgs, alpha, log_idos, log_sum_idos, L =\
+        #             mc.randomMCmoves(Emin, E[m - 2], E[m - 1], Einfty,\
+        #                           nSteps, e, X, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix)
         lCfgs, alpha, log_idos, log_sum_idos, L =\
-                    mc.randomMCmoves(Emin, E[m - 2], E[m - 1], Einfty,\
-                                  nSteps, e, X, log_idos, log_sum_idos, L, a1, a2, a3, Xeq, forceMatrix)
+                    mc2.randomMCmoves2(Emin, E[m - 2], E[m - 1], Einfty,\
+                                  nSteps, e, structXcopy, log_idos, log_sum_idos, L, a1, a2, a3, structEq, forceMatrix)
 
         lAlpha[m] = alpha # <- overwrite since α_m was recalculated.
     #
